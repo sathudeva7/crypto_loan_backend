@@ -2,11 +2,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model";
 
-export const registerUserService = async ( email: string, password: string) => {
+export const registerUserService = async ( email: string, password: string, phoneNumber: number) => {
 	try {
-		// Check if user already exists
-		console.log(email,'rem')
-		console.log(User,'fdfd')
 		const existingUser = await User.findOne({ email });
 		if (existingUser) {
 			throw new Error('Email already exists');
@@ -20,7 +17,8 @@ export const registerUserService = async ( email: string, password: string) => {
 		// Create new user
 		const user = await User.create({
 			email,
-			password: hashedPassword
+			password: hashedPassword,
+			phoneNumber
 		});
 		
 		console.log('user', user)
@@ -43,7 +41,9 @@ export const registerUserService = async ( email: string, password: string) => {
 
 export const loginUserService = async (email: string, password: string) => {
 	try {
+		console.log('service')
 		const user = await User.findOne({ email });
+console.log('user', user)
 		if (!user) {
 			throw new Error('Invalid credentials');
 		}

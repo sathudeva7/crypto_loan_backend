@@ -1,8 +1,9 @@
 import { ethers } from "ethers";
-import { LENDING_POOL_ADDRESS, PROVIDER_RPC_URL } from "./constants";
+import { BORROW_USDC_ADDRESS, LENDING_POOL_ADDRESS, PROVIDER_RPC_URL } from "./constants";
 import { borrowAbi } from "../utils/borrow.abi";
 import dotenv from "dotenv";
 import Stripe from 'stripe';
+import { usdcAbi } from "../utils/usdc.abi";
 
 dotenv.config();
 // Ensure that environmental variables are correctly accessed
@@ -29,4 +30,10 @@ export const lendingPool = new ethers.Contract(
   wallet
 );
 
-export const stripe = new Stripe('sk_test_51IBPAuCNNrXsusT4azISSriWDbL0PPJH6DXPFieSC4EGm0mJjwRN0nfaUziDIjogXVZPmIlfv7be5vmWJsvxI7EX00wj3JTJ9N');
+export const usdcContract = new ethers.Contract(
+  BORROW_USDC_ADDRESS,
+  usdcAbi,
+  wallet
+);
+
+export const stripe = new Stripe('sk_test_51Qyg3IG2Bmbob5ei4q4k71xyHmsXvhfg1qfhJ4uaiXUzbLoenzwFVufY1R5RycwOSrok2IGfgnagviapS1rq1F8700qAPqBsAJ');

@@ -26,6 +26,7 @@ const UserSchema = new mongoose.Schema({
 	},
 	firstName: String,
 	lastName: String,
+	phoneNumber: Number,
 	dob: {
 		day: Number,
 		month: Number,
@@ -33,7 +34,10 @@ const UserSchema = new mongoose.Schema({
 	},
 	connectedAccountId: String,
 	externalAccountId: String,
-	walletAddress: String
+	walletAddress: {
+		type: String,
+		default: null
+	}
 }, {
 	timestamps: true
 });

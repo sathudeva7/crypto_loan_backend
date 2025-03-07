@@ -6,13 +6,13 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export interface IGetUserAuthInfoRequest extends Request {
-	user?: object;
-   }
+	user?: any;
+}
 
 const authMiddleware = async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     // Get token from headers
-    const token = req.header("Authorization")?.split(" ")[1];
+    const token = req.headers.authorization;
 
     if (!token) {
       res.status(401).json({ message: "Unauthorized: No token provided" });
