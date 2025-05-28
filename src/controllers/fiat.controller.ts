@@ -58,7 +58,6 @@ export const createPaymentIntent = async (
     if (!amountDue) {
       return res.status(400).json({ message: "Invalid loan ID or no amount due" });
     }
-console.log(amountDue);
     // ✅ Pass the correctly resolved amount to Stripe
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountDue*100, // Now correctly passing the resolved amount

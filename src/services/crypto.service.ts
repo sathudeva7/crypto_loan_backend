@@ -10,7 +10,7 @@ export const borrowTokenService = async (borrowAmount: number, delegatorAddress:
 
     // Parse borrow amount to correct units
     const parsedBorrowAmount = ethers.utils.parseUnits(borrowAmount.toString(), DEFAULT_DECIMALS);
-console.log('in borrow---', delegatorAddress);
+
     // Create transaction
     const tx = await lendingPool.borrow(
       BORROW_USDC_ADDRESS,
@@ -24,19 +24,9 @@ console.log('in borrow---', delegatorAddress);
       }
     );
 
-    console.log("Borrow transaction submitted, hash:", tx.hash);
-
-    // Wait for confirmation (optional)
     await tx.wait()
-      .then((receipt: any) =>
-        console.log(`Transaction confirmed in block ${receipt.blockNumber}`)
-      )
       .catch(console.error);
     
-    console.log("Tokens borrowed successfully.");
-
-    
-
     return tx; // Return transaction object for further processing
 
   } catch (error: any) {
@@ -49,10 +39,8 @@ export const repayStableService = async (repayAmount: number, borrowerAddress: s
   try {
     // Get current gas price
     const gasPrice = await wallet.provider.getGasPrice();
-    console.log("Current Gas Price:", ethers.utils.formatUnits(gasPrice, "gwei"), "Gwei");
 
     // Step 1: Approve USDC for repayment
-    console.log("Approving USDC for repayment...");
     const approveTx = await usdcContract.approve(
       lendingPool.address,
       ethers.utils.parseUnits(repayAmount.toString(), 6),
@@ -62,10 +50,8 @@ export const repayStableService = async (repayAmount: number, borrowerAddress: s
       }
     );
     await approveTx.wait(); // Wait for approval confirmation
-    console.log("USDC Approval Transaction Hash:", approveTx.hash);
 
     // Step 2: Repay the loan
-    console.log("Repaying Aave Loan...");
     const tx = await lendingPool.repay(
       BORROW_USDC_ADDRESS,  // Asset to repay (e.g., USDC)
       ethers.utils.parseUnits(repayAmount.toString(), 6),  // Amount to repay (10 USDC)
@@ -78,7 +64,6 @@ export const repayStableService = async (repayAmount: number, borrowerAddress: s
     );
 
     await tx.wait(); // Wait for repayment confirmation
-    console.log("Loan Repayment Successful! Transaction Hash:", tx.hash);
 
     return tx; // Return the transaction object if needed
   } catch (error: any) {

@@ -19,7 +19,7 @@ if (!PRIVATE_KEY) {
 
 // Create a provider using Infura project ID
 const provider = new ethers.providers.JsonRpcProvider(`${PROVIDER_RPC_URL}/${INFURA_PROJECT_ID}`);
-console.log(provider);
+
 // Initialize wallet using the private key and provider
 export const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 

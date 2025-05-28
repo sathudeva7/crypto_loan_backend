@@ -41,7 +41,6 @@ export const registerUser = async (req: Request, res: Response) => {
 			token,
 		});
 	} catch (error: any) {
-		console.log(error);
 		return res.status(400).json({ message: error.message });
 	}
 };
@@ -49,7 +48,7 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
 	try {
 		const { error } = loginSchema.validate(req.body);
-		console.log("login");
+
 		if (error) {
 			return res.status(400).json({ error: error.details[0].message });
 		}
@@ -57,13 +56,13 @@ export const loginUser = async (req: Request, res: Response) => {
 		const { email, password } = req.body;
 
 		const { user, token } = await loginUserService(email, password);
-		console.log(user);
+
 		return res.status(200).json({
 			user,
 			token,
 		});
 	} catch (error: any) {
-		console.log(error);
+
 		return res.status(400).json({ message: error.message });
 	}
 };

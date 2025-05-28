@@ -1,7 +1,7 @@
 import { stripe } from "../config/utils";
 import User from "../models/user.model";
 
-interface userData  {
+interface UserData {
 	accountHolderName: string;
 	sortCode: string;
 	accountNumber: string;
@@ -17,10 +17,13 @@ interface userData  {
 	dob: string;
 }
 
-export const createStripeUserService = async (userData: userData, user: any) => {
+export const createStripeUserService = async (
+	userData: UserData,
+	user: any
+): Promise<{ connectedAccountId: string; externalAccountId: string } | void> => {
 	try {
 		const [day, month, year] = userData.dob.split('/');
-		// Step 1: Create a Bank Account Token
+
 		const bankAccountToken = await stripe.tokens.create({
 			bank_account: {
 				country: "GB",
@@ -31,9 +34,7 @@ export const createStripeUserService = async (userData: userData, user: any) => 
 				account_number: userData.accountNumber,
 			},
 		});
-		console.log("✅ Bank account token created:", bankAccountToken.id, userData);
 
-		// Step 2: Create a Connected Account
 		const connectedAccount = await stripe.accounts.create({
 			type: "custom",
 			country: "GB",
@@ -64,23 +65,16 @@ export const createStripeUserService = async (userData: userData, user: any) => 
 				},
 			},
 			business_profile: {
-				mcc: "5734", // Valid Merchant Category Code
+				mcc: "5734",
 				url: "www.abc.com",
 			},
 		});
-		console.log("✅ Connected account created:", connectedAccount.id);
 
-		// Step 3: Attach Bank Account to the Connected Account
 		const externalAccount = await stripe.accounts.createExternalAccount(
 			connectedAccount.id,
 			{ external_account: bankAccountToken.id }
 		);
-		console.log(
-			"✅ Bank account added to connected account:",
-			externalAccount.id
-		);
 
-		//fIND USER BY EMAIL AND ADD CONNECTED ACCOUNT ID TO DB
 		const existingUser = await User.findById(user?._id);
 
 		if (!existingUser) {
@@ -96,25 +90,27 @@ export const createStripeUserService = async (userData: userData, user: any) => 
 			connectedAccountId: connectedAccount.id,
 			externalAccountId: externalAccount.id,
 		};
-	} catch (error: any) {
-		console.error("Error borrowing tokens:", error.message);
-		// Implement proper error handling logic depending on your application's needs
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			console.error("Error borrowing tokens:", error.message);
+			throw new Error(`Stripe user creation failed: ${error.message}`);
+		}
+		throw new Error("Stripe user creation failed: Unknown error");
 	}
 };
 
-export const transferMoney = async (connectedAccountId: string, amount: number) => {
+export const transferMoney = async (
+	connectedAccountId: string,
+	amount: number
+): Promise<any> => {
 	try {
-		// Step 4: Transfer Funds to the Connected Account
 		const transfer = await stripe.transfers.create({
-			amount: amount* 10, // 5000 pence = £50
-			currency: "eur", // ✅ Ensure the transfer currency is GBP
+			amount: amount * 10,
+			currency: "eur",
 			destination: connectedAccountId,
 			description: "Transfer to connected account",
 		});
 
-		console.log("✅ Transfer successful:", transfer.id);
-
-		// Step 5: Wait for Funds to Become Available
 		const waitForFunds = async () => {
 			let retries = 0;
 			const maxRetries = 10;
@@ -123,50 +119,51 @@ export const transferMoney = async (connectedAccountId: string, amount: number) 
 					{},
 					{ stripeAccount: connectedAccountId }
 				);
-				console.log(balance);
+
 				const availableFunds = balance.available.find(
-					(b) => b.currency === "gbp"
+					(b: { currency: string; amount: number }) => b.currency === "gbp"
 				);
 
 				if (availableFunds && availableFunds.amount >= 1) {
-					console.log("✅ Funds are now available for payout.");
 					return;
 				}
 
-				console.log(
-					`⏳ Waiting for funds... Retry ${retries + 1}/${maxRetries}`
-				);
 				retries++;
-				await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds before checking again
+				await new Promise((resolve) => setTimeout(resolve, 5000));
 			}
-			throw new Error("🚨 Funds did not become available in time.");
+			throw new Error("Funds did not become available in time.");
 		};
-
-		//await waitForFunds();
 
 		const balance = await stripe.balance.retrieve(
 			{},
 			{ stripeAccount: connectedAccountId }
 		);
-		console.log(balance);
 
-		// Step 6: Create a Payout from the Connected Account
+		const availableFunds = balance.available.find(
+			(b: { currency: string; amount: number }) => b.currency === "gbp"
+		);
+
+		if (!availableFunds || availableFunds.amount < 1) {
+			throw new Error("Funds are not available for payout.");
+		}
+
 		const payout = await stripe.payouts.create(
 			{
-				amount: balance.available[0].amount, // 200 pence = £2.00
+				amount: balance.available[0].amount,
 				currency: "eur",
 				description: "Payout to bank account",
 			},
 			{
-				stripeAccount: connectedAccountId, // ✅ This ensures the payout is from the connected account
+				stripeAccount: connectedAccountId,
 			}
 		);
 
-		console.log("✅ Payout successful:", payout.id);
-
 		return payout;
-	} catch (error: any) {
-		console.error("Error borrowing tokens:", error.message);
-		// Implement proper error handling logic depending on your application's needs
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			console.error("Error borrowing tokens:", error.message);
+			throw new Error(`Transfer failed: ${error.message}`);
+		}
+		throw new Error("Transfer failed: Unknown error");
 	}
 };

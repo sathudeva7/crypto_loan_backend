@@ -22,13 +22,11 @@ export const createLoanController = async (
   res: Response
 ): Promise<void> => {
   try {
-    // Validate request body
     const { error } = loanSchema.validate(req.body);
     if (error) {
       res.status(400).json({ error: error.details[0].message });
     }
 
-    // Extract valid fields
     const {
       title,
       amountBorrowed,
@@ -40,14 +38,12 @@ export const createLoanController = async (
       category,
     } = req.body;
 
-    // Assuming user ID is coming from authenticated request (e.g., req.user.id)
-    const { user } = req; // Ensure authentication middleware adds user object
+    const { user } = req;
 
     if (!user) {
       res.status(401).json({ error: "Unauthorized user" });
     }
 
-    // Call loan creation service
     const newLoan = await createLoanService({
       user,
       title,
@@ -75,15 +71,12 @@ export const getLoansByUserController = async (
   res: Response
 ): Promise<void> => {
   try {
-    console.log("call getloan");
     const { user } = req;
-    console.log(user);
 
     if (!user) {
       res.status(401).json({ error: "Unauthorized user" });
     }
 
-    // Fetch all loans associated with the authenticated user
     const loans = await getLoanByUserService({ user: user });
 
     res.status(200).json({
@@ -102,9 +95,7 @@ export const getLoanByIdController = async (
 ): Promise<void> => {
   try {
     const { loanId } = req.params;
- console.log('cccc--')
     const loan = await getLoanByIdService({ id: loanId });
-  console.log(loan);
     res.status(200).json({
       success: true,
       loan,
@@ -133,7 +124,6 @@ export const loadPdf = async (req: Request, res: Response): Promise<void> => {
         scale: 0.8,
         margin: { top: "20mm", bottom: "20mm", left: "10mm", right: "10mm" },
       });
-      console.log("PDF created successfully");
 
       await browser.close();
     })();
